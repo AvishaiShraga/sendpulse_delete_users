@@ -27,7 +27,7 @@ app.post("/api/bots", async (req, res) => {
 
   try {
     const token = await getAccessToken(clientId, clientSecret);
-    const botsRes = await axios.get(`${SENDPULSE_API}/chatbots/v1/bots`, {
+    const botsRes = await axios.get(`${SENDPULSE_API}/whatsapp/bots`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     res.json({ bots: botsRes.data.data || [] });
@@ -70,9 +70,9 @@ app.post("/api/cleanup", async (req, res) => {
     send({ type: "info", message: `סריקה החלה. תאריך חסימה: ${cutoffDate.toLocaleDateString("he-IL")}` });
 
     while (hasMore) {
-      const contactsRes = await axios.get(`${SENDPULSE_API}/chatbots/v1/contacts`, {
+      const contactsRes = await axios.get(`${SENDPULSE_API}/whatsapp/contacts/getByTag`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { bot_id: botId, offset, limit },
+        params: { bot_id: botId, tag: "", offset, limit },
       });
 
       const contacts = contactsRes.data.data || [];
@@ -105,9 +105,10 @@ app.post("/api/cleanup", async (req, res) => {
 
           if (mode === "live") {
             try {
-              await axios.delete(`${SENDPULSE_API}/chatbots/v1/contacts`, {
+              await axios.post(`${SENDPULSE_API}/whatsapp/contacts/delete`, {
+                contact_id: contact.id,
+              }, {
                 headers: { Authorization: `Bearer ${token}` },
-                data: { contact_id: contact.id },
               });
               totalDeleted++;
               send({ type: "deleted", contact: info });
