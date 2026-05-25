@@ -99,19 +99,20 @@ app.post("/api/cleanup", async (req, res) => {
     send({ type: "info", message: `סריקה החלה. תאריך חסימה: ${cutoffDate.toLocaleDateString("he-IL")}` });
 
     while (hasMore) {
-      const contactsRes = await axios.get(`${SENDPULSE_API}/whatsapp/contacts`, {
+      const chatsRes = await axios.get(`${SENDPULSE_API}/whatsapp/chats`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { bot_id: botId, offset, limit },
       });
 
-      const contacts = contactsRes.data.data || [];
-      if (contacts.length === 0) {
+      const chats = chatsRes.data.data || [];
+      if (chats.length === 0) {
         hasMore = false;
         break;
       }
 
-      for (const contact of contacts) {
-        const lastActivity = contact.last_activity; // unix timestamp or ISO string
+      for (const chat of chats) {
+        const contact = chat.contact || chat;
+        const lastActivity = chat.last_message?.created_at || chat.updated_at || chat.created_at;
         let lastTs;
 
         if (typeof lastActivity === "number") {
@@ -119,7 +120,6 @@ app.post("/api/cleanup", async (req, res) => {
         } else if (typeof lastActivity === "string") {
           lastTs = new Date(lastActivity).getTime() / 1000;
         } else {
-          // No activity data – treat as inactive
           lastTs = 0;
         }
 
@@ -152,7 +152,7 @@ app.post("/api/cleanup", async (req, res) => {
         }
       }
 
-      if (contacts.length < limit) {
+      if (chats.length < limit) {
         hasMore = false;
       } else {
         offset += limit;
