@@ -18,6 +18,35 @@ async function getAccessToken(clientId, clientSecret) {
   return res.data.access_token;
 }
 
+// Debug: try multiple endpoints to find what works
+app.post("/api/debug", async (req, res) => {
+  const { clientId, clientSecret } = req.body;
+  const token = await getAccessToken(clientId, clientSecret).catch(e => null);
+  if (!token) return res.json({ error: "auth failed" });
+
+  const endpoints = [
+    "/whatsapp/bots",
+    "/chatbots/bots",
+    "/chatbots/v1/bots",
+    "/telegram/bots",
+    "/instagram/bots",
+    "/facebook/bots",
+  ];
+
+  const results = {};
+  for (const ep of endpoints) {
+    try {
+      const r = await axios.get(`${SENDPULSE_API}${ep}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      results[ep] = { status: r.status, data: r.data };
+    } catch (e) {
+      results[ep] = { status: e.response?.status, error: e.response?.data || e.message };
+    }
+  }
+  res.json(results);
+});
+
 // Returns list of bots for the given credentials
 app.post("/api/bots", async (req, res) => {
   const { clientId, clientSecret } = req.body;
