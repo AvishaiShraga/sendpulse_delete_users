@@ -99,9 +99,9 @@ app.post("/api/cleanup", async (req, res) => {
     send({ type: "info", message: `סריקה החלה. תאריך חסימה: ${cutoffDate.toLocaleDateString("he-IL")}` });
 
     while (hasMore) {
-      const contactsRes = await axios.get(`${SENDPULSE_API}/whatsapp/contacts/getByTag`, {
+      const contactsRes = await axios.get(`${SENDPULSE_API}/whatsapp/contacts`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { bot_id: botId, tag: "", offset, limit },
+        params: { bot_id: botId, offset, limit },
       });
 
       const contacts = contactsRes.data.data || [];
