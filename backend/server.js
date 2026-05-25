@@ -18,6 +18,23 @@ async function getAccessToken(clientId, clientSecret) {
   return res.data.access_token;
 }
 
+// Debug: inspect chats structure for a specific bot
+app.post("/api/debug-chats", async (req, res) => {
+  const { clientId, clientSecret, botId } = req.body;
+  const token = await getAccessToken(clientId, clientSecret).catch(e => null);
+  if (!token) return res.json({ error: "auth failed" });
+
+  try {
+    const r = await axios.get(`${SENDPULSE_API}/whatsapp/chats`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { bot_id: botId, offset: 0, limit: 2 },
+    });
+    res.json(r.data);
+  } catch (e) {
+    res.json({ error: e.response?.data || e.message });
+  }
+});
+
 // Debug: try multiple endpoints to find what works
 app.post("/api/debug", async (req, res) => {
   const { clientId, clientSecret } = req.body;
