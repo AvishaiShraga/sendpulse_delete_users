@@ -29,7 +29,14 @@ app.post("/api/debug-chats", async (req, res) => {
       headers: { Authorization: `Bearer ${token}` },
       params: { bot_id: botId, offset: 0, limit: 2 },
     });
-    res.json(r.data);
+    // Return full raw structure so we can inspect all fields
+    const chats = r.data?.data || [];
+    res.json({
+      raw: r.data,
+      first_chat_keys: chats[0] ? Object.keys(chats[0]) : [],
+      first_contact_keys: chats[0]?.contact ? Object.keys(chats[0].contact) : [],
+      sample: chats[0] || null,
+    });
   } catch (e) {
     res.json({ error: e.response?.data || e.message });
   }
@@ -144,6 +151,7 @@ app.post("/api/cleanup", async (req, res) => {
           totalFound++;
           const info = {
             id: contact.id,
+            tag: contact.tag,
             name: contact.name || contact.phone || contact.id,
             phone: contact.phone,
             last_activity: lastActivity,
@@ -151,8 +159,10 @@ app.post("/api/cleanup", async (req, res) => {
 
           if (mode === "live") {
             try {
+              const contactTag = contact.tag || contact.id;
               await axios.post(`${SENDPULSE_API}/whatsapp/contacts/delete`, {
-                contact_id: contact.id,
+                tag: contactTag,
+                bot_id: botId,
               }, {
                 headers: { Authorization: `Bearer ${token}` },
               });
